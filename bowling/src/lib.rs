@@ -76,16 +76,15 @@ impl BowlingGame {
         let tenth_frame = self.frames.get(9);
 
         let has_n_fill_rolls = |rolls| {
-            let mut rolls_counted = 0;
-
-            for result in self.results().skip(10).take(rolls) {
-                match result {
-                    FrameResult::Strike => rolls_counted += 1,
-                    FrameResult::Spare(_) => rolls_counted += 2,
-                    FrameResult::Open(_, _) => rolls_counted += 2,
-                }
-            }
-
+            let rolls_counted = self
+                .results()
+                .skip(10)
+                .take(rolls)
+                .fold(0, |counted, result| match result {
+                    FrameResult::Strike => counted + 1,
+                    FrameResult::Spare(_) => counted + 2,
+                    FrameResult::Open(_, _) => counted + 2,
+                });
             rolls_counted >= rolls
         };
 
@@ -162,20 +161,17 @@ impl BowlingGame {
             (rolls_counted == rolls).then_some(rolls_score)
         };
 
-        let mut score = 0;
-
         // Traverse the 10 frames and sum up the total score according
         // to bowling scoring rules.
-        for (result, frame_num) in self.results().take(10).zip(1..) {
-            match result {
-                FrameResult::Strike => {
-                    score += 10 + next_rolls(frame_num, 2)?;
-                }
-                FrameResult::Spare(_) => score += 10 + next_rolls(frame_num, 1)?,
-                FrameResult::Open(f, s) => score += f + s,
-            }
-        }
-
-        Some(score)
+        self.results()
+            .take(10)
+            .zip(1..)
+            .fold(Some(0), |score, (result, frame_num)| {
+                score.and_then(|score| match result {
+                    FrameResult::Strike => Some(score + 10 + next_rolls(frame_num, 2)?),
+                    FrameResult::Spare(_) => Some(score + 10 + next_rolls(frame_num, 1)?),
+                    FrameResult::Open(f, s) => Some(score + f + s),
+                })
+            })
     }
 }
