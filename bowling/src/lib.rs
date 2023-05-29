@@ -6,22 +6,40 @@ pub enum Error {
     GameComplete,
 }
 
+/// The result for a Frame.
 #[derive(Debug, Copy, Clone)]
 enum FrameResult {
+    /// Single roll 10 pins.
     Strike,
+    /// Two throws resulting in 10 pins retaining the total pins for the first throw.
     Spare(u16),
+    /// The total pins for the first and second throw that totals under 10 pins.
     Open(u16, u16),
+}
+
+impl FrameResult {
+    /// Yield all the rolls for a completed frame.
+    fn rolls(&self) -> impl Iterator<Item = u16> {
+        let it: Box<dyn Iterator<Item = u16>> = match self {
+            FrameResult::Strike => Box::new(std::iter::once(10)),
+            FrameResult::Spare(f) => Box::new([*f, 10 - *f].into_iter()),
+            FrameResult::Open(f, s) => Box::new([*f, *s].into_iter()),
+        };
+        it
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
 enum Frame {
+    /// Frame is in progress and the first roll has been made.
     Open(u16),
+    /// Frame is finished.
     Closed(FrameResult),
 }
 
 impl Frame {
+    /// Is the frame in a closed state.
     fn is_complete(&self) -> bool {
-        // self.result.is_some()
         match self {
             Frame::Open(_) => false,
             Frame::Closed(_) => true,
@@ -32,17 +50,15 @@ impl Frame {
 #[derive(Debug, Default)]
 pub struct BowlingGame {
     frames: Vec<Frame>,
-    total_rolls: u16,
 }
 
 impl BowlingGame {
+    /// Start a new Bowling game.
     pub fn new() -> Self {
-        Self {
-            frames: Vec::new(),
-            total_rolls: 0,
-        }
+        Self { frames: Vec::new() }
     }
 
+    /// Yield all the frame results.
     fn results(&self) -> impl Iterator<Item = &FrameResult> {
         self.frames.iter().flat_map(|f| match f {
             Frame::Open(_) => None,
@@ -50,10 +66,12 @@ impl BowlingGame {
         })
     }
 
+    /// Get the open frame for modification.
     fn open_frame(&mut self) -> Option<&mut Frame> {
         self.frames.last_mut().filter(|f| !f.is_complete())
     }
 
+    /// Is the game complete.
     fn is_complete(&self) -> bool {
         let tenth_frame = self.frames.get(9);
 
@@ -80,6 +98,7 @@ impl BowlingGame {
         }
     }
 
+    /// Handle a player roll.
     pub fn roll(&mut self, pins: u16) -> Result<(), Error> {
         (pins <= 10).then_some(()).ok_or(Error::NotEnoughPinsLeft)?;
 
@@ -123,58 +142,30 @@ impl BowlingGame {
             self.frames.push(frame);
         }
 
-        self.total_rolls += 1;
-
         Ok(())
     }
 
+    /// Compute the total score at the end of the game.
     pub fn score(&self) -> Option<u16> {
-        dbg!(&self.frames);
+        self.is_complete().then_some(())?;
 
-        let bonus_frame = self
-            .results()
-            .nth(9)
-            .map(|r| matches!(r, FrameResult::Strike | FrameResult::Spare(_)))
-            .unwrap_or(false);
-
-        let total_frames = self.frames.len();
-
-        (total_frames == 10 || bonus_frame).then_some(())?;
-
+        // Get the score for the next n rolls.
         let next_rolls = |current_frame, rolls| {
-            let mut rolls_score = 0;
-            let mut rolls_counted = 0;
+            let (rolls_score, rolls_counted) = self
+                .results()
+                .skip(current_frame)
+                .flat_map(|result| result.rolls())
+                .take(rolls)
+                .zip(1..)
+                .fold((0, 0), |(rolls, counted), (r, _)| (rolls + r, counted + 1));
 
-            for result in self.results().skip(current_frame) {
-                if rolls_counted == rolls {
-                    break;
-                }
-                println!("next {rolls} rolls {result:?}");
-                match result {
-                    FrameResult::Strike => {
-                        rolls_score += 10;
-                        rolls_counted += 1;
-                    }
-                    FrameResult::Spare(f) => {
-                        rolls_score += if rolls == 1 { *f } else { 10 };
-                        rolls_counted = rolls;
-                    }
-                    FrameResult::Open(f, s) => {
-                        rolls_score += if rolls == 1 || rolls_counted == 1 {
-                            *f
-                        } else {
-                            *f + *s
-                        };
-                        rolls_counted = rolls;
-                    }
-                }
-            }
-            println!("rolls_score: {rolls_score}");
             (rolls_counted == rolls).then_some(rolls_score)
         };
 
-        let mut score: u16 = 0;
+        let mut score = 0;
 
+        // Traverse the 10 frames and sum up the total score according
+        // to bowling scoring rules.
         for (result, frame_num) in self.results().take(10).zip(1..) {
             match result {
                 FrameResult::Strike => {
