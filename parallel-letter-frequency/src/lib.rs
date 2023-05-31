@@ -1,39 +1,44 @@
 use std::collections::HashMap;
 use std::thread;
 
-fn count_chars(words: Vec<String>) -> HashMap<char, usize> {
-    words
-        .iter()
-        .flat_map(move |s| {
-            s.chars()
-                .filter(|c| c.is_alphabetic())
-                .flat_map(move |c| c.to_lowercase())
-        })
-        .fold(HashMap::new(), |mut counts, c| {
-            counts.entry(c).and_modify(|n| *n += 1).or_insert(1);
-            counts
-        })
-}
-
 pub fn frequency(input: &[&str], worker_count: usize) -> HashMap<char, usize> {
-    let batch_size = {
-        let size = input.len() / worker_count;
-        if size > 0 {
-            size
-        } else {
-            1
-        }
-    };
+    if worker_count == 1 {
+        input
+            .iter()
+            .flat_map(|s| s.chars())
+            .filter(|c| c.is_alphabetic())
+            .flat_map(|c| c.to_lowercase())
+            .fold(HashMap::new(), |mut counts, c| {
+                counts.entry(c).and_modify(|n| *n += 1).or_insert(1);
+                counts
+            })
+    } else {
+        let one_string = input.join("");
+        let batch_size = (one_string.len() / worker_count) + 1;
+        let mut char_iter = one_string.chars();
 
-    input
-        .chunks(batch_size)
-        .map(|batch| batch.iter().map(|s| s.to_string()).collect::<Vec<_>>())
-        .map(|batch| thread::spawn(move || count_chars(batch)))
-        .fold(HashMap::new(), |mut result, worker| {
-            let m = worker.join().unwrap();
-            for (k, v) in m {
-                result.entry(k).and_modify(|n| *n += v).or_insert(v);
-            }
-            result
-        })
+        (0..worker_count)
+            .map(|_| {
+                let batch = char_iter.by_ref().take(batch_size).collect::<String>();
+                thread::spawn(move || {
+                    batch
+                        .chars()
+                        .filter(|c| c.is_alphabetic())
+                        .flat_map(|c| c.to_lowercase())
+                        .fold(HashMap::new(), |mut counts, c| {
+                            counts.entry(c).and_modify(|n| *n += 1).or_insert(1);
+                            counts
+                        })
+                })
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .fold(HashMap::new(), |mut result, worker| {
+                let m = worker.join().unwrap();
+                for (k, v) in m {
+                    result.entry(k).and_modify(|n| *n += v).or_insert(v);
+                }
+                result
+            })
+    }
 }
