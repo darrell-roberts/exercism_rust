@@ -8,6 +8,7 @@ pub struct Palindrome(u64);
 impl Palindrome {
     /// Create a `Palindrome` only if `value` is in fact a palindrome when represented in base ten. Otherwise, `None`.
     pub fn new(value: u64) -> Option<Palindrome> {
+        (value % 10 != 0).then_some(())?;
         let mut divisor = value;
         let reverse = std::iter::from_fn(move || {
             (divisor != 0).then(|| {
@@ -28,7 +29,8 @@ impl Palindrome {
 
 pub fn palindrome_products(min: u64, max: u64) -> Option<(Palindrome, Palindrome)> {
     let (highest, lowest) = (min..=max)
-        .flat_map(|x| (x..=max).map(move |y| (x, y)))
+        .filter(|n| n % 10 != 0)
+        .flat_map(|x| (x..=max).filter(|n| n % 10 != 0).map(move |y| (x, y)))
         .map(|(x, y)| x * y)
         .flat_map(Palindrome::new)
         .fold((None, None), |(h, l), n| match (h, l) {
