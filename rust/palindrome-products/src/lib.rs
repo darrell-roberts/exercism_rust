@@ -1,3 +1,7 @@
+use digit::DigitIterator;
+
+mod digit;
+
 /// `Palindrome` is a newtype which only exists when the contained value is a palindrome number in base ten.
 ///
 /// A struct with a single field which is used to constrain behavior like this is called a "newtype", and its use is
@@ -8,17 +12,35 @@ pub struct Palindrome(u64);
 impl Palindrome {
     /// Create a `Palindrome` only if `value` is in fact a palindrome when represented in base ten. Otherwise, `None`.
     pub fn new(value: u64) -> Option<Palindrome> {
-        (value % 10 != 0).then_some(())?;
-        let mut divisor = value;
-        let reverse = std::iter::from_fn(move || {
-            (divisor != 0).then(|| {
-                let (d, r) = (divisor / 10, divisor % 10);
-                divisor = d;
-                r
-            })
-        })
-        .fold(0, |reverse, digit| reverse * 10 + digit);
-        (value == reverse).then_some(Self(value))
+        // Using this iterator is a bit slower vs
+        // the in place algorithm commented out below.
+        // ~ 7 seconds.
+        let digit_iter = DigitIterator::new(value);
+        let half = digit_iter.len() / 2;
+
+        digit_iter
+            .take(half)
+            .eq(digit_iter.rev().take(half))
+            .then_some(Self(value))
+
+        // A faster algorithm. ~ 3 seconds.
+
+        // let mut result = value;
+        // let mut divisor = 1;
+        // while (value / divisor) >= 10 {
+        //     divisor *= 10;
+        // }
+
+        // while result != 0 {
+        //     let leading = result / divisor;
+        //     let trailing = result % 10;
+        //     if leading != trailing {
+        //         return None;
+        //     }
+        //     result = (result % divisor) / 10;
+        //     divisor /= 100;
+        // }
+        // Some(Self(value))
     }
 
     /// Get the value of this palindrome.

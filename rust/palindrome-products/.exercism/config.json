@@ -19,6 +19,7 @@
   "files": {
     "solution": [
       "src/lib.rs",
+      "src/digit.rs",
       "Cargo.toml"
     ],
     "test": [
