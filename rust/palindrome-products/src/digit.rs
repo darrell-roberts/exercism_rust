@@ -31,7 +31,6 @@ impl DigitIterator {
 impl Iterator for DigitIterator {
     type Item = u64;
 
-    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.value.take().map(|n| {
             let digit = n / self.divisor;
@@ -51,7 +50,6 @@ impl Iterator for DigitIterator {
 }
 
 impl DoubleEndedIterator for DigitIterator {
-    #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         self.value.take().map(|n| {
             let result = n / 10;
