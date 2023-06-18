@@ -53,7 +53,7 @@ impl DoubleEndedIterator for DigitIterator {
         self.value.take().map(|n| {
             let result = n / 10;
             if result > 0 {
-                self.value = result.into();
+                self.value = Some(result);
             }
             self.total_digits -= 1;
             n % 10
