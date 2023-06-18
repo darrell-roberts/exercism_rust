@@ -2,7 +2,7 @@
 ///
 /// A struct with a single field which is used to constrain behavior like this is called a "newtype", and its use is
 /// often referred to as the "newtype pattern". This is a fairly common pattern in Rust.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Palindrome(u64);
 
 impl Palindrome {
