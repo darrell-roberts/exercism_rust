@@ -21,17 +21,10 @@ pub trait Planet {
     }
 }
 
-pub struct Mercury;
-pub struct Venus;
-pub struct Earth;
-pub struct Mars;
-pub struct Jupiter;
-pub struct Saturn;
-pub struct Uranus;
-pub struct Neptune;
-
 macro_rules! planet {
-    ($target:ty, $ratio:expr) => {
+    ($target:ident, $ratio:expr) => {
+        pub struct $target;
+
         impl Planet for $target {
             const EARTH_RATIO: f64 = $ratio;
         }
