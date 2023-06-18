@@ -51,5 +51,5 @@ pub fn palindrome_products(min: u64, max: u64) -> Option<(Palindrome, Palindrome
             }
         });
 
-    lowest.and_then(|l| highest.map(|h| (l, h)))
+    lowest.zip(highest)
 }
