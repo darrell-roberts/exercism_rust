@@ -10,6 +10,7 @@ pub struct DigitIterator {
 }
 
 impl DigitIterator {
+    #[must_use]
     /// Create a digit iterator from a u64.
     pub fn new(value: u64) -> Self {
         let mut divisor = 1;
@@ -30,6 +31,7 @@ impl DigitIterator {
 impl Iterator for DigitIterator {
     type Item = u64;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.value.take().map(|n| {
             let digit = n / self.divisor;
@@ -49,6 +51,7 @@ impl Iterator for DigitIterator {
 }
 
 impl DoubleEndedIterator for DigitIterator {
+    #[inline]
     fn next_back(&mut self) -> Option<Self::Item> {
         self.value.take().map(|n| {
             let result = n / 10;
