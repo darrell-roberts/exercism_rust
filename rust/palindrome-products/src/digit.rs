@@ -1,6 +1,7 @@
 //! A digit iterator that can yield digits forwards
 //! or backwards from an intial u64 value.
 
+#[must_use]
 #[derive(Clone, Copy)]
 /// An iterator that yields digits.
 pub struct DigitIterator {
@@ -10,7 +11,6 @@ pub struct DigitIterator {
 }
 
 impl DigitIterator {
-    #[must_use]
     /// Create a digit iterator from a u64.
     pub fn new(value: u64) -> Self {
         let mut divisor = 1;

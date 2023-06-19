@@ -28,28 +28,43 @@ impl Palindrome {
 }
 
 pub fn palindrome_products(min: u64, max: u64) -> Option<(Palindrome, Palindrome)> {
-    let mut prod_min = u64::MAX;
-    let mut prod_max = u64::MIN;
+    struct Result {
+        palindrome_high: Option<Palindrome>,
+        palindrome_low: Option<Palindrome>,
+        prod_min: u64,
+        prod_max: u64,
+    }
 
-    let (lowest, highest) = (min..=max)
+    let Result {
+        palindrome_low,
+        palindrome_high,
+        ..
+    } = (min..=max)
         .flat_map(|x| (x..=max).map(move |y| x * y))
-        .fold((None, None), |(l, h), prod| {
-            if prod > prod_min && prod < prod_max {
-                return (l, h);
-            }
-
-            match Palindrome::new(prod) {
-                Some(p) if prod_min > prod => {
-                    prod_min = prod;
-                    (Some(p), h)
+        .fold(
+            Result {
+                palindrome_high: None,
+                palindrome_low: None,
+                prod_min: u64::MAX,
+                prod_max: u64::MIN,
+            },
+            |mut r, prod| {
+                if !(prod > r.prod_min && prod < r.prod_max) {
+                    match Palindrome::new(prod) {
+                        Some(p) if r.prod_min > prod => {
+                            r.prod_min = prod;
+                            r.palindrome_low = Some(p);
+                        }
+                        Some(p) if r.prod_max < prod => {
+                            r.prod_max = prod;
+                            r.palindrome_high = Some(p)
+                        }
+                        _ => (),
+                    }
                 }
-                Some(p) if prod_max < prod => {
-                    prod_max = prod;
-                    (l, Some(p))
-                }
-                _ => (l, h),
-            }
-        });
+                r
+            },
+        );
 
-    lowest.zip(highest)
+    palindrome_low.zip(palindrome_high)
 }
