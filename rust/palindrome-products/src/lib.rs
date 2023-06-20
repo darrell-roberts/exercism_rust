@@ -12,6 +12,8 @@ pub struct Palindrome(u64);
 impl Palindrome {
     /// Create a `Palindrome` only if `value` is in fact a palindrome when represented in base ten. Otherwise, `None`.
     pub fn new(value: u64) -> Option<Palindrome> {
+        // Time (mean ± σ):       28.6 ms ±   0.8 ms    [User: 53.6 ms, System: 1.5 ms]
+        // Range (min … max):    27.0 ms …  31.4 ms   100 runs
         let digit_iter = DigitIterator::new(value);
         let half = digit_iter.len() / 2;
 
@@ -19,6 +21,25 @@ impl Palindrome {
             .take(half)
             .eq(digit_iter.rev().take(half))
             .then_some(Self(value))
+
+        // Time (mean ± σ):       26.0 ms ±   1.5 ms    [User: 47.9 ms, System: 1.4 ms]
+        // Range (min … max):    24.5 ms …  34.9 ms   100 runs
+
+        // let mut result = value;
+        // let mut divisor = 1;
+        // while (value / divisor) >= 10 {
+        //     divisor *= 10;
+        // }
+        // while result != 0 {
+        //     let leading = result / divisor;
+        //     let trailing = result % 10;
+        //     if leading != trailing {
+        //         return None;
+        //     }
+        //     result = (result % divisor) / 10;
+        //     divisor /= 100;
+        // }
+        // Some(Self(value))
     }
 
     /// Get the value of this palindrome.
